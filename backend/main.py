@@ -5,7 +5,7 @@ from typing import Optional
 import uvicorn
 
 from database import init_db, get_db, SessionLocal, Paper, Keyword, Trend, Summary
-from agents import run_workflow
+# from agents import run_workflow  # Temporarily disabled for deployment
 import config
 
 app = FastAPI(title="HCI Research Trends API", version="1.0.0")
@@ -80,21 +80,22 @@ async def trigger_workflow(
     6. Build reports
     7. Create social posts
     """
-    def run_in_background():
-        try:
-            result = run_workflow()
-            print(f"✅ Workflow completed successfully")
-            print(f"   Papers: {len(result['papers'])}")
-            print(f"   Keywords: {len(result['keywords'])}")
-            print(f"   Trends: {len(result['trends'])}")
-        except Exception as e:
-            print(f"❌ Workflow failed: {str(e)}")
+    # Temporarily disabled for deployment - will be enabled after LangGraph setup
+    # def run_in_background():
+    #     try:
+    #         result = run_workflow()
+    #         print(f"✅ Workflow completed successfully")
+    #         print(f"   Papers: {len(result['papers'])}")
+    #         print(f"   Keywords: {len(result['keywords'])}")
+    #         print(f"   Trends: {len(result['trends'])}")
+    #     except Exception as e:
+    #         print(f"❌ Workflow failed: {str(e)}")
     
-    background_tasks.add_task(run_in_background)
+    # background_tasks.add_task(run_in_background)
     
     return StatusResponse(
-        status="started",
-        message="Workflow started in background. Check logs for progress."
+        status="pending",
+        message="Workflow endpoint ready. LangGraph agents will be enabled in next deployment."
     )
 
 @app.get("/papers")
