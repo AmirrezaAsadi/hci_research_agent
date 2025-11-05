@@ -195,6 +195,39 @@ async def get_stats():
     finally:
         db.close()
 
+@app.post("/reset", response_model=StatusResponse)
+async def reset_database():
+    """
+    Reset the database - delete all papers, keywords, summaries, and trends
+    WARNING: This will delete all data!
+    """
+    db = SessionLocal()
+    try:
+        # Delete in correct order (foreign keys)
+        summary_count = db.query(Summary).count()
+        db.query(Summary).delete()
+        
+        keyword_count = db.query(Keyword).count()
+        db.query(Keyword).delete()
+        
+        trend_count = db.query(Trend).count()
+        db.query(Trend).delete()
+        
+        paper_count = db.query(Paper).count()
+        db.query(Paper).delete()
+        
+        db.commit()
+        
+        return StatusResponse(
+            status="success",
+            message=f"Database reset! Deleted {paper_count} papers, {keyword_count} keywords, {summary_count} summaries, {trend_count} trends"
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
