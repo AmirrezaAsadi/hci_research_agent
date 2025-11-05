@@ -39,9 +39,11 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://hciresearchagent-production.up.railway.app';
+      
       const [papersRes, trendsRes] = await Promise.all([
-        fetch('/api/papers?limit=10'),
-        fetch('/api/trends?limit=10')
+        fetch(`${backendUrl}/papers?limit=10`),
+        fetch(`${backendUrl}/trends?limit=10`)
       ]);
 
       const papersData = await papersRes.json();
@@ -95,7 +97,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+      <section className="bg-linear-to-r from-blue-600 to-purple-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
             <h2 className="text-4xl font-bold mb-4">

@@ -46,12 +46,36 @@ export default function PapersPage() {
 
   const fetchPapers = async () => {
     try {
-      const response = await fetch('/api/papers?limit=50');
-      const data = await response.json();
+      // Fetch papers from Railway backend
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://hciresearchagent-production.up.railway.app';
+      const papersResponse = await fetch(`${backendUrl}/papers?limit=50`);
+      const papersData = await papersResponse.json();
 
-      if (data.success) {
-        setPapers(data.data);
-        setFilteredPapers(data.data);
+      if (papersData.success) {
+        const papersWithSummaries = papersData.data;
+
+        // Fetch summaries for each paper
+        const summariesPromises = papersWithSummaries.map(async (paper: Paper) => {
+          try {
+            const summaryResponse = await fetch(`${backendUrl}/summaries/${paper.id}`);
+            const summaryData = await summaryResponse.json();
+            
+            if (summaryData.success && summaryData.data) {
+              return {
+                ...paper,
+                summary_text: summaryData.data.summary_text,
+                generated_image_url: summaryData.data.generated_image_url
+              };
+            }
+          } catch {
+            // Silently skip papers without summaries
+          }
+          return paper;
+        });
+
+        const enrichedPapers = await Promise.all(summariesPromises);
+        setPapers(enrichedPapers);
+        setFilteredPapers(enrichedPapers);
       }
     } catch (error) {
       console.error('Error fetching papers:', error);
