@@ -25,7 +25,8 @@ export default function TrendsPage() {
 
   const fetchTrends = async () => {
     try {
-      const response = await fetch('/api/trends?limit=50');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://hciresearchagent-production.up.railway.app';
+      const response = await fetch(`${backendUrl}/trends?limit=50`);
       const data = await response.json();
 
       if (data.success) {
@@ -76,7 +77,7 @@ export default function TrendsPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+      <section className="bg-linear-to-r from-purple-600 to-pink-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <div className="flex items-center justify-center mb-4">
