@@ -181,17 +181,22 @@ export default function PapersPage() {
                   {new Date(paper.published_date).toLocaleDateString()}
                 </div>
 
-                {paper.summary_text && (
-                  <div className="mb-2">
-                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                      ✨ AI Summary
-                    </span>
+                {paper.summary_text ? (
+                  <div className="mb-4">
+                    <div className="mb-2">
+                      <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                        ✨ AI Summary (Student-Friendly)
+                      </span>
+                    </div>
+                    <p className="text-gray-900 text-sm leading-relaxed bg-green-50 p-3 rounded border border-green-200">
+                      {paper.summary_text}
+                    </p>
                   </div>
+                ) : (
+                  <p className="text-gray-700 text-sm line-clamp-4 mb-4">
+                    {paper.abstract}
+                  </p>
                 )}
-
-                <p className="text-gray-700 text-sm line-clamp-4 mb-4">
-                  {paper.summary_text || paper.abstract}
-                </p>
 
                 <div className="flex flex-wrap gap-1 mb-4">
                   {paper.arxiv_categories.slice(0, 3).map((cat) => (
