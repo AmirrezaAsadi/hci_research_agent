@@ -24,7 +24,7 @@ ARXIV_DAYS_BACK = 7
 
 # Grok API Settings
 GROK_API_BASE_URL = os.getenv("GROK_API_BASE_URL", "https://api.x.ai/v1")
-GROK_MODEL_TEXT = "grok-beta"
+GROK_MODEL_TEXT = "grok-3-mini"
 GROK_MODEL_IMAGE = "grok-2-image-1212"
 
 # Scheduling
