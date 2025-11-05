@@ -362,6 +362,7 @@ def image_creation_agent(state: AgentState) -> AgentState:
     print("🎨 Image Creation Agent: Generating images...")
     
     try:
+        db = SessionLocal()
         images = []
         
         if not config.GROK_API_KEY:
@@ -370,13 +371,121 @@ def image_creation_agent(state: AgentState) -> AgentState:
             state['current_step'] = 'images_created'
             return state
         
-        # For now, we'll skip actual image generation to save costs
-        # In production, you would call Grok-2-Image-1212 API here
-        print("ℹ️  Image generation prepared (implement Grok-2-Image-1212 API call)")
+        headers = {
+            "Authorization": f"Bearer {config.GROK_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        # Generate images for papers with summaries
+        for paper in state['papers'][:5]:  # Limit to 5 papers
+            # Check if summary exists for this paper
+            summary = db.query(Summary).filter(Summary.paper_id == paper['id']).first()
+            if not summary:
+                print(f"⏭️  Skipping image for paper {paper['arxiv_id']} (no summary)")
+                continue
+            
+            # Create visual prompt from paper
+            visual_prompt = f"""Create a clean, modern, minimalist illustration representing this research concept:
+            
+Title: {paper['title']}
+Summary: {summary.summary_text[:200]}
+
+Style: Flat design, vibrant colors, simple geometric shapes, tech/futuristic theme, suitable for academic presentation"""
+            
+            print(f"🎨 Generating image for paper: {paper['arxiv_id']}")
+            
+            # Try up to 2 times
+            max_retries = 2
+            for attempt in range(max_retries):
+                try:
+                    # Try chat completions endpoint with image model
+                    response = requests.post(
+                        f"{config.GROK_API_BASE_URL}/chat/completions",
+                        headers=headers,
+                        json={
+                            "model": config.GROK_MODEL_IMAGE,
+                            "messages": [
+                                {
+                                    "role": "user",
+                                    "content": [
+                                        {
+                                            "type": "text",
+                                            "text": visual_prompt
+                                        }
+                                    ]
+                                }
+                            ],
+                            "temperature": 0.8,
+                            "max_tokens": 1024
+                        },
+                        timeout=120  # Image generation can take longer
+                    )
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        print(f"📥 Image API response: {result}")
+                        
+                        # Extract image URL from response
+                        image_url = None
+                        
+                        # Check different possible response formats
+                        if 'choices' in result and len(result['choices']) > 0:
+                            message = result['choices'][0].get('message', {})
+                            content = message.get('content', '')
+                            
+                            # Check if content is a URL
+                            if isinstance(content, str) and content.startswith('http'):
+                                image_url = content
+                            # Check for image_url field
+                            elif 'image_url' in message:
+                                image_url = message['image_url']
+                            # Check for data field (base64 or URL)
+                            elif isinstance(content, dict) and 'url' in content:
+                                image_url = content['url']
+                        
+                        # Check for direct data/url field
+                        if not image_url and 'data' in result:
+                            data = result['data']
+                            if isinstance(data, list) and len(data) > 0:
+                                image_url = data[0].get('url')
+                        
+                        # Update summary with image URL
+                        if image_url:
+                            summary.generated_image_url = image_url
+                            db.commit()
+                            
+                            images.append({
+                                'paper_id': paper['id'],
+                                'image_url': image_url
+                            })
+                            print(f"✅ Generated image for paper {paper['arxiv_id']}: {image_url}")
+                        else:
+                            print(f"⚠️  Could not extract image URL from response for paper {paper['arxiv_id']}")
+                            print(f"   Response structure: {list(result.keys())}")
+                        
+                        break  # Success, exit retry loop
+                    else:
+                        error_msg = response.text if response.text else "No error message"
+                        print(f"⚠️  Image API returned status {response.status_code} for paper {paper['arxiv_id']}")
+                        print(f"   Error: {error_msg}")
+                        if attempt < max_retries - 1:
+                            print(f"   Retrying... ({attempt + 2}/{max_retries})")
+                            continue
+                        
+                except Exception as e:
+                    print(f"⚠️  Error generating image for paper {paper['arxiv_id']}: {str(e)}")
+                    if attempt < max_retries - 1:
+                        print(f"   Retrying... ({attempt + 2}/{max_retries})")
+                        continue
+                    else:
+                        print(f"   Failed after {max_retries} attempts, skipping...")
+                        break
+        
+        db.close()
         
         state['images'] = images
         state['current_step'] = 'images_created'
-        print(f"✅ Image Creation Agent: Prepared {len(images)} image requests")
+        print(f"✅ Image Creation Agent: Generated {len(images)} images")
         
     except Exception as e:
         print(f"❌ Image Creation Agent Error: {str(e)}")
