@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search, BookOpen, ExternalLink, Calendar } from 'lucide-react';
+import PaperModal from '../components/PaperModal';
 
 interface Paper {
   id: number;
@@ -25,6 +26,7 @@ export default function PapersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPapers, setFilteredPapers] = useState<Paper[]>([]);
+  const [selectedPaper, setSelectedPaper] = useState<Paper | null>(null);
 
   useEffect(() => {
     fetchPapers();
@@ -162,14 +164,12 @@ export default function PapersPage() {
 
               <div className="p-6">
                 <h3 className="font-semibold text-lg mb-2 line-clamp-3">
-                  <a
-                    href={paper.arxiv_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800"
+                  <button
+                    onClick={() => setSelectedPaper(paper)}
+                    className="text-blue-600 hover:text-blue-800 text-left w-full"
                   >
                     {paper.title}
-                  </a>
+                  </button>
                 </h3>
 
                 <p className="text-gray-600 text-sm mb-2 line-clamp-2">
@@ -207,15 +207,13 @@ export default function PapersPage() {
                 </div>
 
                 <div className="flex space-x-2">
-                  <a
-                    href={paper.arxiv_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() => setSelectedPaper(paper)}
                     className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
                   >
                     <ExternalLink className="h-4 w-4 mr-1" />
-                    ArXiv
-                  </a>
+                    View Details
+                  </button>
                   <a
                     href={paper.pdf_url}
                     target="_blank"
@@ -243,6 +241,14 @@ export default function PapersPage() {
           </div>
         )}
       </main>
+
+      {/* Paper Detail Modal */}
+      {selectedPaper && (
+        <PaperModal
+          paper={selectedPaper}
+          onClose={() => setSelectedPaper(null)}
+        />
+      )}
     </div>
   );
 }

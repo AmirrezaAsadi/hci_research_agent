@@ -101,7 +101,7 @@ def arxiv_search_agent(state: AgentState) -> AgentState:
 
 def keyword_extraction_agent(state: AgentState) -> AgentState:
     """
-    Agent 2: Extract keywords from papers
+    Agent 2: Extract keywords from papers using NLP techniques
     """
     print("🔑 Keyword Extraction Agent: Extracting keywords...")
     
@@ -109,42 +109,75 @@ def keyword_extraction_agent(state: AgentState) -> AgentState:
         db = SessionLocal()
         keywords = []
         
+        # Stop words to exclude
+        stop_words = {
+            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+            'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
+            'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
+            'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these',
+            'those', 'we', 'our', 'us', 'they', 'their', 'them', 'it', 'its',
+            'which', 'who', 'what', 'where', 'when', 'how', 'why', 'paper',
+            'study', 'research', 'approach', 'method', 'propose', 'present',
+            'show', 'demonstrate', 'results', 'using', 'based', 'novel'
+        }
+        
         for paper in state['papers']:
-            # Extract from categories
-            for category in paper['categories']:
+            # Extract meaningful phrases from abstract
+            text = paper['abstract'].lower()
+            
+            # Important HCI and AI domain terms (multi-word phrases first)
+            domain_terms = [
+                # AI/ML terms
+                'machine learning', 'deep learning', 'neural network', 'reinforcement learning',
+                'transfer learning', 'federated learning', 'large language model', 'generative ai',
+                'computer vision', 'natural language processing', 'speech recognition',
+                'knowledge graph', 'diffusion model', 'transformer', 'attention mechanism',
+                
+                # HCI terms
+                'user interface', 'user experience', 'interaction design', 'usability',
+                'accessibility', 'human-computer interaction', 'user study', 'user behavior',
+                'augmented reality', 'virtual reality', 'mixed reality', 'extended reality',
+                'gesture recognition', 'eye tracking', 'haptic feedback', 'multimodal interaction',
+                
+                # Application domains
+                'healthcare', 'education', 'robotics', 'autonomous systems', 'iot',
+                'cybersecurity', 'privacy', 'explainability', 'interpretability', 'fairness',
+                'bias', 'ethics', 'sustainability', 'accessibility'
+            ]
+            
+            # Extract domain terms found in abstract
+            extracted_terms = set()
+            for term in domain_terms:
+                if term in text:
+                    extracted_terms.add(term)
+            
+            # Extract significant single words (nouns, adjectives, verbs)
+            words = text.replace(',', ' ').replace('.', ' ').replace('(', ' ').replace(')', ' ').split()
+            word_freq = {}
+            
+            for word in words:
+                word = word.strip()
+                # Keep words that are 4+ chars, not stop words, and alphanumeric
+                if len(word) >= 4 and word not in stop_words and word.isalpha():
+                    word_freq[word] = word_freq.get(word, 0) + 1
+            
+            # Get top single-word keywords (frequency > 1)
+            for word, freq in sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:10]:
+                if freq > 1:  # Only words appearing multiple times
+                    extracted_terms.add(word)
+            
+            # Store extracted keywords
+            for term in extracted_terms:
                 keyword_data = {
                     'paper_id': paper['id'],
-                    'keyword': category,
-                    'source': 'arxiv',
-                    'confidence': 1.0,
-                    'category': 'arxiv_category'
+                    'keyword': term,
+                    'source': 'nlp_extracted',
+                    'confidence': 0.9,
+                    'category': 'topic'
                 }
-                
                 keyword = Keyword(**keyword_data)
                 db.add(keyword)
                 keywords.append(keyword_data)
-            
-            # Extract common HCI terms from title and abstract
-            text = f"{paper['title']} {paper['abstract']}".lower()
-            hci_terms = [
-                'machine learning', 'deep learning', 'neural network',
-                'user interface', 'user experience', 'interaction design',
-                'accessibility', 'augmented reality', 'virtual reality',
-                'natural language', 'computer vision', 'ai', 'hci'
-            ]
-            
-            for term in hci_terms:
-                if term in text:
-                    keyword_data = {
-                        'paper_id': paper['id'],
-                        'keyword': term,
-                        'source': 'extracted',
-                        'confidence': 0.8,
-                        'category': 'topic'
-                    }
-                    keyword = Keyword(**keyword_data)
-                    db.add(keyword)
-                    keywords.append(keyword_data)
         
         db.commit()
         db.close()
@@ -256,44 +289,59 @@ def summary_generation_agent(state: AgentState) -> AgentState:
             Summary:
             """
             
-            try:
-                response = requests.post(
-                    f"{config.GROK_API_BASE_URL}/chat/completions",
-                    headers=headers,
-                    json={
-                        "model": config.GROK_MODEL_TEXT,
-                        "messages": [
-                            {"role": "system", "content": "You are a helpful assistant that explains research to students."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        "max_tokens": 200,
-                        "temperature": 0.7
-                    },
-                    timeout=30
-                )
-                
-                if response.status_code == 200:
-                    summary_text = response.json()['choices'][0]['message']['content']
-                    word_count = len(summary_text.split())
-                    
-                    summary = Summary(
-                        paper_id=paper['id'],
-                        summary_text=summary_text,
-                        word_count=word_count,
-                        difficulty_level='undergraduate'
+            # Try up to 3 times with longer timeout
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    response = requests.post(
+                        f"{config.GROK_API_BASE_URL}/chat/completions",
+                        headers=headers,
+                        json={
+                            "model": config.GROK_MODEL_TEXT,
+                            "messages": [
+                                {"role": "system", "content": "You are a helpful assistant that explains research to students."},
+                                {"role": "user", "content": prompt}
+                            ],
+                            "max_tokens": 200,
+                            "temperature": 0.7
+                        },
+                        timeout=60  # Increased to 60 seconds
                     )
-                    db.add(summary)
-                    db.commit()
                     
-                    summaries.append({
-                        'paper_id': paper['id'],
-                        'summary_text': summary_text,
-                        'word_count': word_count
-                    })
-                    
-            except Exception as e:
-                print(f"⚠️  Error generating summary for paper {paper['arxiv_id']}: {str(e)}")
-                continue
+                    if response.status_code == 200:
+                        summary_text = response.json()['choices'][0]['message']['content']
+                        word_count = len(summary_text.split())
+                        
+                        summary = Summary(
+                            paper_id=paper['id'],
+                            summary_text=summary_text,
+                            word_count=word_count,
+                            difficulty_level='undergraduate'
+                        )
+                        db.add(summary)
+                        db.commit()
+                        
+                        summaries.append({
+                            'paper_id': paper['id'],
+                            'summary_text': summary_text,
+                            'word_count': word_count
+                        })
+                        print(f"✅ Generated summary for paper {paper['arxiv_id']}")
+                        break  # Success, exit retry loop
+                    else:
+                        print(f"⚠️  API returned status {response.status_code} for paper {paper['arxiv_id']}")
+                        if attempt < max_retries - 1:
+                            print(f"   Retrying... ({attempt + 2}/{max_retries})")
+                            continue
+                        
+                except Exception as e:
+                    print(f"⚠️  Error generating summary for paper {paper['arxiv_id']}: {str(e)}")
+                    if attempt < max_retries - 1:
+                        print(f"   Retrying... ({attempt + 2}/{max_retries})")
+                        continue
+                    else:
+                        print(f"   Failed after {max_retries} attempts, skipping...")
+                        break
         
         db.close()
         

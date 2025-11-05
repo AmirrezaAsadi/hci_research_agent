@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, TrendingUp, BookOpen } from 'lucide-react';
+import PaperModal from './components/PaperModal';
 
 interface Paper {
   id: number;
@@ -32,6 +33,7 @@ export default function Home() {
   const [trendingKeywords, setTrendingKeywords] = useState<Trend[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPaper, setSelectedPaper] = useState<Paper | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -144,14 +146,12 @@ export default function Home() {
               {recentPapers.slice(0, 5).map((paper) => (
                 <div key={paper.id} className="bg-white p-6 rounded-lg shadow-sm border">
                   <h4 className="font-semibold text-lg mb-2 line-clamp-2">
-                    <a
-                      href={paper.arxiv_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800"
+                    <button
+                      onClick={() => setSelectedPaper(paper)}
+                      className="text-blue-600 hover:text-blue-800 text-left w-full"
                     >
                       {paper.title}
-                    </a>
+                    </button>
                   </h4>
                   <p className="text-gray-600 text-sm mb-2">
                     {paper.authors.join(', ')}
@@ -239,6 +239,14 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Paper Detail Modal */}
+      {selectedPaper && (
+        <PaperModal
+          paper={selectedPaper}
+          onClose={() => setSelectedPaper(null)}
+        />
+      )}
     </div>
   );
 }
