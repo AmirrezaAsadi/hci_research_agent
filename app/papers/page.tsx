@@ -181,6 +181,14 @@ export default function PapersPage() {
                   {new Date(paper.published_date).toLocaleDateString()}
                 </div>
 
+                {paper.summary_text && (
+                  <div className="mb-2">
+                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                      ✨ AI Summary
+                    </span>
+                  </div>
+                )}
+
                 <p className="text-gray-700 text-sm line-clamp-4 mb-4">
                   {paper.summary_text || paper.abstract}
                 </p>
