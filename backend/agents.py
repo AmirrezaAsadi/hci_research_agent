@@ -278,7 +278,18 @@ def summary_generation_agent(state: AgentState) -> AgentState:
             "Content-Type": "application/json"
         }
         
-        for paper in state['papers'][:5]:  # Limit to 5 papers to save API calls
+        # Process only papers without summaries (incremental processing)
+        papers_to_process = []
+        for paper in state['papers']:
+            existing_summary = db.query(Summary).filter(Summary.paper_id == paper['id']).first()
+            if not existing_summary:
+                papers_to_process.append(paper)
+        
+        # Limit to 10 papers per run to avoid timeouts
+        papers_to_process = papers_to_process[:10]
+        print(f"📝 Processing {len(papers_to_process)} papers without summaries")
+        
+        for paper in papers_to_process:
             prompt = f"""
             Summarize this research paper for undergraduate students in exactly 100 words.
             Make it accessible, exciting, and easy to understand.
@@ -376,23 +387,32 @@ def image_creation_agent(state: AgentState) -> AgentState:
             "Content-Type": "application/json"
         }
         
-        # Generate images for papers with summaries
-        for paper in state['papers'][:5]:  # Limit to 5 papers
-            # Check if summary exists for this paper
-            summary = db.query(Summary).filter(Summary.paper_id == paper['id']).first()
-            if not summary:
-                print(f"⏭️  Skipping image for paper {paper['arxiv_id']} (no summary)")
+        # Generate images for papers with summaries but no images yet (incremental)
+        summaries_without_images = db.query(Summary).filter(Summary.generated_image_url == None).limit(5).all()
+        print(f"🎨 Processing {len(summaries_without_images)} summaries without images")
+        
+        for summary in summaries_without_images:
+            # Get the paper for this summary
+            paper = db.query(Paper).filter(Paper.id == summary.paper_id).first()
+            if not paper:
+                print(f"⚠️  Paper not found for summary {summary.paper_id}")
                 continue
+            
+            paper_dict = {
+                'id': paper.id,
+                'arxiv_id': paper.arxiv_id,
+                'title': paper.title
+            }
             
             # Create visual prompt from paper
             visual_prompt = f"""Create a clean, modern, minimalist illustration representing this research concept:
             
-Title: {paper['title']}
+Title: {paper_dict['title']}
 Summary: {summary.summary_text[:200]}
 
 Style: Flat design, vibrant colors, simple geometric shapes, tech/futuristic theme, suitable for academic presentation"""
             
-            print(f"🎨 Generating image for paper: {paper['arxiv_id']}")
+            print(f"🎨 Generating image for paper: {paper_dict['arxiv_id']}")
             
             # Try up to 2 times
             max_retries = 2
@@ -435,25 +455,25 @@ Style: Flat design, vibrant colors, simple geometric shapes, tech/futuristic the
                             db.commit()
                             
                             images.append({
-                                'paper_id': paper['id'],
+                                'paper_id': paper_dict['id'],
                                 'image_url': image_url
                             })
-                            print(f"✅ Generated image for paper {paper['arxiv_id']}: {image_url}")
+                            print(f"✅ Generated image for paper {paper_dict['arxiv_id']}: {image_url}")
                         else:
-                            print(f"⚠️  Could not extract image URL from response for paper {paper['arxiv_id']}")
+                            print(f"⚠️  Could not extract image URL from response for paper {paper_dict['arxiv_id']}")
                             print(f"   Response structure: {list(result.keys())}")
                         
                         break  # Success, exit retry loop
                     else:
                         error_msg = response.text if response.text else "No error message"
-                        print(f"⚠️  Image API returned status {response.status_code} for paper {paper['arxiv_id']}")
+                        print(f"⚠️  Image API returned status {response.status_code} for paper {paper_dict['arxiv_id']}")
                         print(f"   Error: {error_msg}")
                         if attempt < max_retries - 1:
                             print(f"   Retrying... ({attempt + 2}/{max_retries})")
                             continue
                         
                 except Exception as e:
-                    print(f"⚠️  Error generating image for paper {paper['arxiv_id']}: {str(e)}")
+                    print(f"⚠️  Error generating image for paper {paper_dict['arxiv_id']}: {str(e)}")
                     if attempt < max_retries - 1:
                         print(f"   Retrying... ({attempt + 2}/{max_retries})")
                         continue
