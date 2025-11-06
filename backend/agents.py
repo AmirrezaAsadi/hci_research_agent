@@ -398,56 +398,36 @@ Style: Flat design, vibrant colors, simple geometric shapes, tech/futuristic the
             max_retries = 2
             for attempt in range(max_retries):
                 try:
-                    # Try chat completions endpoint with image model
+                    # Use the correct images/generations endpoint for Grok image model
                     response = requests.post(
-                        f"{config.GROK_API_BASE_URL}/chat/completions",
+                        f"{config.GROK_API_BASE_URL}/images/generations",
                         headers=headers,
                         json={
                             "model": config.GROK_MODEL_IMAGE,
-                            "messages": [
-                                {
-                                    "role": "user",
-                                    "content": [
-                                        {
-                                            "type": "text",
-                                            "text": visual_prompt
-                                        }
-                                    ]
-                                }
-                            ],
-                            "temperature": 0.8,
-                            "max_tokens": 1024
+                            "prompt": visual_prompt,
+                            "n": 1,
+                            "size": "1024x1024",
+                            "response_format": "url"
                         },
                         timeout=120  # Image generation can take longer
                     )
                     
                     if response.status_code == 200:
                         result = response.json()
-                        print(f"📥 Image API response: {result}")
+                        print(f"📥 Image API response keys: {list(result.keys())}")
                         
-                        # Extract image URL from response
+                        # Extract image URL from images API response
+                        # Format: {"data": [{"url": "https://..."}, ...]}
                         image_url = None
                         
-                        # Check different possible response formats
-                        if 'choices' in result and len(result['choices']) > 0:
-                            message = result['choices'][0].get('message', {})
-                            content = message.get('content', '')
-                            
-                            # Check if content is a URL
-                            if isinstance(content, str) and content.startswith('http'):
-                                image_url = content
-                            # Check for image_url field
-                            elif 'image_url' in message:
-                                image_url = message['image_url']
-                            # Check for data field (base64 or URL)
-                            elif isinstance(content, dict) and 'url' in content:
-                                image_url = content['url']
-                        
-                        # Check for direct data/url field
-                        if not image_url and 'data' in result:
-                            data = result['data']
-                            if isinstance(data, list) and len(data) > 0:
-                                image_url = data[0].get('url')
+                        if 'data' in result and isinstance(result['data'], list) and len(result['data']) > 0:
+                            image_data = result['data'][0]
+                            if 'url' in image_data:
+                                image_url = image_data['url']
+                            elif 'b64_json' in image_data:
+                                # Handle base64 format if returned
+                                print(f"⚠️  Image returned as base64, not storing (need to upload to storage)")
+                                image_url = None
                         
                         # Update summary with image URL
                         if image_url:
