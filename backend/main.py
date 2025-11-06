@@ -178,22 +178,68 @@ async def get_summary(paper_id: int):
 
 @app.get("/stats")
 async def get_stats():
-    """Get overall statistics"""
+    """Get database statistics"""
     db = SessionLocal()
     try:
+        paper_count = db.query(Paper).count()
+        keyword_count = db.query(Keyword).count()
+        trend_count = db.query(Trend).count()
+        summary_count = db.query(Summary).count()
+        summaries_with_images = db.query(Summary).filter(Summary.generated_image_url != None).count()
+        
         return {
             "success": True,
             "data": {
-                "total_papers": db.query(Paper).count(),
-                "total_keywords": db.query(Keyword).count(),
-                "total_trends": db.query(Trend).count(),
-                "total_summaries": db.query(Summary).count()
+                "total_papers": paper_count,
+                "total_keywords": keyword_count,
+                "total_trends": trend_count,
+                "total_summaries": summary_count,
+                "summaries_with_images": summaries_with_images
             }
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
+
+@app.get("/test-image")
+async def test_image_generation():
+    """Test image generation with Grok API"""
+    import requests
+    
+    if not config.GROK_API_KEY:
+        return {"error": "GROK_API_KEY not set"}
+    
+    headers = {
+        "Authorization": f"Bearer {config.GROK_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    test_prompt = "A simple, modern, minimalist illustration of AI and human interaction"
+    
+    try:
+        # Test with chat completions endpoint
+        response = requests.post(
+            f"{config.GROK_API_BASE_URL}/chat/completions",
+            headers=headers,
+            json={
+                "model": config.GROK_MODEL_IMAGE,
+                "messages": [
+                    {"role": "user", "content": test_prompt}
+                ],
+                "temperature": 0.7
+            },
+            timeout=30
+        )
+        
+        return {
+            "status_code": response.status_code,
+            "response": response.json() if response.status_code == 200 else response.text,
+            "model": config.GROK_MODEL_IMAGE
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "model": config.GROK_MODEL_IMAGE
+        }
 
 @app.post("/reset", response_model=StatusResponse)
 async def reset_database():
