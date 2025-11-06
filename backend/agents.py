@@ -39,7 +39,7 @@ def arxiv_search_agent(state: AgentState) -> AgentState:
         
         # Search ArXiv for each category
         search_query = (
-            "cat:cs.HC OR cat:cs.AI OR cat:cs.CY OR cat:cs.CV OR cat:cs.LG "
+            "cat:cs.HC OR cat:cs.AI OR cat:cs.CY "
             "AND (HCI OR human-computer interaction OR user interface OR UX)"
         )
         
