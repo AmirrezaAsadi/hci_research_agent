@@ -467,7 +467,9 @@ Style: Flat design, vibrant colors, simple geometric shapes, tech/futuristic the
                     else:
                         error_msg = response.text if response.text else "No error message"
                         print(f"⚠️  Image API returned status {response.status_code} for paper {paper_dict['arxiv_id']}")
-                        print(f"   Error: {error_msg}")
+                        print(f"   Full error response: {error_msg}")
+                        print(f"   Request URL: {config.GROK_API_BASE_URL}/images/generations")
+                        print(f"   Request model: {config.GROK_MODEL_IMAGE}")
                         if attempt < max_retries - 1:
                             print(f"   Retrying... ({attempt + 2}/{max_retries})")
                             continue
