@@ -11,6 +11,13 @@ POSTGRES_URL = os.getenv("POSTGRES_URL", DATABASE_URL)
 GROK_API_KEY = os.getenv("GROK_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+# Cloudflare R2 Storage (for permanent image hosting)
+R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID")
+R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID")
+R2_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY")
+R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "hci-research-images")
+R2_PUBLIC_URL = os.getenv("R2_PUBLIC_URL")  # Optional: custom domain
+
 # Redis
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 

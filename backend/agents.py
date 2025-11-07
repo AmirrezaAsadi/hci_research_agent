@@ -456,14 +456,72 @@ Style: Flat design, vibrant colors, simple geometric shapes, tech/futuristic the
                         
                         # Update summary with image URL
                         if image_url:
-                            summary.generated_image_url = image_url
-                            db.commit()
-                            
-                            images.append({
-                                'paper_id': paper_dict['id'],
-                                'image_url': image_url
-                            })
-                            print(f"✅ Generated image for paper {paper_dict['arxiv_id']}: {image_url}")
+                            # Download the image and upload to Cloudflare R2 for permanent hosting
+                            try:
+                                print(f"📥 Downloading image from {image_url[:50]}...")
+                                img_response = requests.get(image_url, timeout=30)
+                                if img_response.status_code == 200:
+                                    # Upload to Cloudflare R2 for permanent hosting
+                                    if config.R2_ACCOUNT_ID and config.R2_ACCESS_KEY_ID and config.R2_SECRET_ACCESS_KEY and config.R2_BUCKET_NAME:
+                                        import boto3
+                                        from botocore.client import Config as BotoConfig
+                                        
+                                        print(f"📤 Uploading to Cloudflare R2...")
+                                        
+                                        # Create S3 client for R2
+                                        s3_client = boto3.client(
+                                            's3',
+                                            endpoint_url=f'https://{config.R2_ACCOUNT_ID}.r2.cloudflarestorage.com',
+                                            aws_access_key_id=config.R2_ACCESS_KEY_ID,
+                                            aws_secret_access_key=config.R2_SECRET_ACCESS_KEY,
+                                            config=BotoConfig(signature_version='s3v4'),
+                                            region_name='auto'
+                                        )
+                                        
+                                        # Generate unique filename
+                                        import hashlib
+                                        from datetime import datetime as dt
+                                        filename = f"papers/{paper_dict['arxiv_id']}-{hashlib.md5(paper_dict['title'].encode()).hexdigest()[:8]}.jpeg"
+                                        
+                                        # Upload to R2
+                                        s3_client.put_object(
+                                            Bucket=config.R2_BUCKET_NAME,
+                                            Key=filename,
+                                            Body=img_response.content,
+                                            ContentType='image/jpeg',
+                                            ACL='public-read'
+                                        )
+                                        
+                                        # Construct public URL
+                                        if config.R2_PUBLIC_URL:
+                                            permanent_url = f"{config.R2_PUBLIC_URL}/{filename}"
+                                        else:
+                                            permanent_url = f"https://{config.R2_BUCKET_NAME}.{config.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/{filename}"
+                                        
+                                        summary.generated_image_url = permanent_url
+                                        db.commit()
+                                        
+                                        images.append({
+                                            'paper_id': paper_dict['id'],
+                                            'image_url': permanent_url
+                                        })
+                                        print(f"✅ Uploaded to R2 for paper {paper_dict['arxiv_id']}: {permanent_url}")
+                                    else:
+                                        # No R2 configured, store original URL
+                                        print(f"⚠️  R2 credentials not set, storing temporary URL")
+                                        summary.generated_image_url = image_url
+                                        db.commit()
+                                else:
+                                    print(f"⚠️  Failed to download image: HTTP {img_response.status_code}")
+                                    summary.generated_image_url = image_url
+                                    db.commit()
+                            except Exception as upload_error:
+                                print(f"⚠️  Error uploading image: {str(upload_error)}")
+                                import traceback
+                                traceback.print_exc()
+                                # Store original URL as fallback
+                                summary.generated_image_url = image_url
+                                db.commit()
                         else:
                             print(f"⚠️  Could not extract image URL from response for paper {paper_dict['arxiv_id']}")
                             print(f"   Response structure: {list(result.keys())}")

@@ -39,7 +39,7 @@ class Summary(Base):
     summary_text = Column(Text, nullable=False)
     word_count = Column(Integer, nullable=False)
     difficulty_level = Column(String(20))
-    generated_image_url = Column(String(255))
+    generated_image_url = Column(Text)  # Changed to Text to support base64 data URLs
     created_at = Column(TIMESTAMP, default=datetime.utcnow)
 
 class Trend(Base):
