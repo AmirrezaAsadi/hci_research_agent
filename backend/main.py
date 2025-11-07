@@ -8,7 +8,7 @@ from database import init_db, get_db, SessionLocal, Paper, Keyword, Trend, Summa
 from agents import run_workflow
 import config
 
-app = FastAPI(title="HCI Research Trends API", version="1.0.0")
+app = FastAPI(title="HCI Research Trends API Made in Cincinnati", version="1.0.0")
 
 # CORS middleware
 app.add_middleware(
