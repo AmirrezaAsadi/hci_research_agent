@@ -575,26 +575,23 @@ def social_media_agent(state: AgentState) -> AgentState:
 def create_workflow() -> StateGraph:
     """
     Create and configure the LangGraph workflow
+    Optimized: Only essential agents to avoid timeouts
     """
     workflow = StateGraph(AgentState)
     
-    # Add all agents
+    # Add essential agents only
     workflow.add_node("arxiv_searcher", arxiv_search_agent)
     workflow.add_node("keyword_extractor", keyword_extraction_agent)
     workflow.add_node("trend_calculator", trend_analysis_agent)
     workflow.add_node("summarizer", summary_generation_agent)
     workflow.add_node("image_generator", image_creation_agent)
-    workflow.add_node("report_builder", report_generation_agent)
-    workflow.add_node("social_creator", social_media_agent)
     
-    # Define the flow
+    # Define the flow (removed report and social agents)
     workflow.add_edge("arxiv_searcher", "keyword_extractor")
     workflow.add_edge("keyword_extractor", "trend_calculator")
     workflow.add_edge("trend_calculator", "summarizer")
     workflow.add_edge("summarizer", "image_generator")
-    workflow.add_edge("image_generator", "report_builder")
-    workflow.add_edge("report_builder", "social_creator")
-    workflow.add_edge("social_creator", END)
+    workflow.add_edge("image_generator", END)
     
     # Set entry point
     workflow.set_entry_point("arxiv_searcher")
