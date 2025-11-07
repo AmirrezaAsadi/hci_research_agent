@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-// Configuration for Next.js - allows external images from Grok AI and Cloudflare R2
+// Configuration for Next.js - al lows external images from Grok AI and Cloudflare R2
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
