@@ -2,7 +2,7 @@
 LangGraph Agents for HCI Research Trends Platform
 This module contains all the agents for the workflow
 """
-from typing import TypedDict, List, Dict, Any
+from typing import TypedDict, List, Dict, Any, Optional
 from langgraph.graph import StateGraph, END
 from datetime import datetime, timedelta
 import arxiv
@@ -21,7 +21,7 @@ class AgentState(TypedDict):
     reports: List[str]
     social_posts: List[Dict[str, Any]]
     current_step: str
-    error: str | None
+    error: Optional[str]
 
 def arxiv_search_agent(state: AgentState) -> AgentState:
     """
@@ -225,10 +225,9 @@ def trend_analysis_agent(state: AgentState) -> AgentState:
             
             growth_rate = 0.0
             if historical:
-                if historical.frequency > 0:
-                    growth_rate = ((frequency - historical.frequency) / historical.frequency) * 100
-            
-            # Store trend
+                freq = historical.frequency
+                if freq > 0:
+                    growth_rate = ((frequency - freq) / freq) * 100            # Store trend
             trend = Trend(
                 keyword=keyword,
                 week_start=week_start,
