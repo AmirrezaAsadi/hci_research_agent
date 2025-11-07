@@ -224,10 +224,11 @@ def trend_analysis_agent(state: AgentState) -> AgentState:
             ).order_by(Trend.week_start.desc()).first()
             
             growth_rate = 0.0
-            if historical:
-                freq = historical.frequency
-                if freq > 0:
-                    growth_rate = ((frequency - freq) / freq) * 100            # Store trend
+            if historical is not None:
+                if historical.frequency > 0:
+                    growth_rate = ((frequency - historical.frequency) / historical.frequency) * 100
+            
+            # Store trend
             trend = Trend(
                 keyword=keyword,
                 week_start=week_start,
