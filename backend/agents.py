@@ -291,13 +291,20 @@ def summary_generation_agent(state: AgentState) -> AgentState:
         
         for paper in papers_to_process:
             prompt = f"""
-            Summarize this research paper for undergraduate students in exactly 100 words.
-            Make it accessible, exciting, and easy to understand.
+            Write a concise executive summary of this research paper for undergraduate students in 150 words.
+            Structure it as follows:
+            - Problem/Background: What challenge does this address?
+            - Solution/Approach: What method or innovation is proposed?
+            - Key Findings: What are the main results?
+            - Impact: Why does this matter?
+            
+            Use clear, professional language that is accessible to undergraduates.
+            Avoid jargon but maintain academic rigor.
             
             Title: {paper['title']}
             Abstract: {paper['abstract']}
             
-            Summary:
+            Executive Summary:
             """
             
             # Try up to 3 times with longer timeout
@@ -313,7 +320,7 @@ def summary_generation_agent(state: AgentState) -> AgentState:
                                 {"role": "system", "content": "You are a helpful assistant that explains research to students."},
                                 {"role": "user", "content": prompt}
                             ],
-                            "max_tokens": 200,
+                            "max_tokens": 250,
                             "temperature": 0.7
                         },
                         timeout=60  # Increased to 60 seconds
@@ -470,6 +477,15 @@ Style: Flat design, vibrant colors, simple geometric shapes, tech/futuristic the
                         print(f"   Full error response: {error_msg}")
                         print(f"   Request URL: {config.GROK_API_BASE_URL}/images/generations")
                         print(f"   Request model: {config.GROK_MODEL_IMAGE}")
+                        print(f"   Request payload: {{'model': '{config.GROK_MODEL_IMAGE}', 'prompt': '...', 'n': 1, 'size': '1024x1024'}}")
+                        
+                        # Try to parse error details
+                        try:
+                            error_json = response.json()
+                            print(f"   Error details: {error_json}")
+                        except:
+                            pass
+                        
                         if attempt < max_retries - 1:
                             print(f"   Retrying... ({attempt + 2}/{max_retries})")
                             continue
