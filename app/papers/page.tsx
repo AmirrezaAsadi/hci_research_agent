@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Search, BookOpen, ExternalLink, Calendar } from 'lucide-react';
 import PaperModal from '../components/PaperModal';
 
@@ -149,11 +148,9 @@ export default function PapersPage() {
             <div key={paper.id} className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow">
               {paper.generated_image_url && (
                 <div className="aspect-video bg-gray-100 flex items-center justify-center">
-                  <Image
+                  <img
                     src={paper.generated_image_url}
                     alt={paper.title}
-                    width={400}
-                    height={225}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';

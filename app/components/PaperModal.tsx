@@ -1,7 +1,6 @@
 'use client';
 
 import { X, ExternalLink, BookOpen } from 'lucide-react';
-import Image from 'next/image';
 
 interface Paper {
   id: number;
@@ -47,11 +46,10 @@ export default function PaperModal({ paper, onClose }: PaperModalProps) {
             {paper.generated_image_url && (
               <div className="mb-6">
                 <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-                  <Image
+                  <img
                     src={paper.generated_image_url}
                     alt={paper.title}
-                    fill
-                    className="object-cover"
+                    className="w-full h-full object-cover"
                   />
                 </div>
               </div>

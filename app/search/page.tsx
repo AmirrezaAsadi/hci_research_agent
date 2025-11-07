@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { Search, BookOpen, ExternalLink, Calendar } from 'lucide-react';
 
@@ -140,11 +139,9 @@ function SearchContent() {
                   <div className="flex flex-col lg:flex-row gap-6">
                     {paper.generated_image_url && (
                       <div className="lg:w-48 lg:flex-shrink-0">
-                        <Image
+                        <img
                           src={paper.generated_image_url}
                           alt={paper.title}
-                          width={192}
-                          height={128}
                           className="w-full h-32 object-cover rounded"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
