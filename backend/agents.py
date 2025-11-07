@@ -432,9 +432,7 @@ Style: Flat design, vibrant colors, simple geometric shapes, tech/futuristic the
                         json={
                             "model": config.GROK_MODEL_IMAGE,
                             "prompt": visual_prompt,
-                            "n": 1,
-                            "size": "1024x1024",
-                            "response_format": "url"
+                            "n": 1
                         },
                         timeout=120  # Image generation can take longer
                     )
