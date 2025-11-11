@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Search, BookOpen, ExternalLink, Calendar } from 'lucide-react';
+import Footer from '../components/Footer';
 
 interface Paper {
   id: number;
@@ -240,6 +241,8 @@ function SearchContent() {
           </div>
         )}
       </main>
+
+      <Footer />
     </div>
   );
 }

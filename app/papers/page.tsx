@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, BookOpen, ExternalLink, Calendar } from 'lucide-react';
 import PaperModal from '../components/PaperModal';
+import Footer from '../components/Footer';
 
 interface Paper {
   id: number;
@@ -246,6 +247,8 @@ export default function PapersPage() {
           onClose={() => setSelectedPaper(null)}
         />
       )}
+
+      <Footer />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { TrendingUp, BookOpen, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import Footer from '../components/Footer';
 
 interface Trend {
   id: number;
@@ -199,6 +200,8 @@ export default function TrendsPage() {
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }

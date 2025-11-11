@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, TrendingUp, BookOpen } from 'lucide-react';
 import PaperModal from './components/PaperModal';
+import Footer from './components/Footer';
 
 interface Paper {
   id: number;
@@ -222,24 +223,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <BookOpen className="h-6 w-6 text-blue-400 mr-2" />
-              <span className="text-xl font-bold">SIGCHI UC</span>
-            </div>
-            <p className="text-gray-400 mb-4">
-              Human-Computer Interaction Research Trends Platform
-            </p>
-            <p className="text-sm text-gray-500">
-              Powered by ArXiv API • Built with Next.js • Hosted on Vercel
-            </p>
-          </div>
-        </div>
-      </footer>
-
       {/* Paper Detail Modal */}
       {selectedPaper && (
         <PaperModal
@@ -247,6 +230,8 @@ export default function Home() {
           onClose={() => setSelectedPaper(null)}
         />
       )}
+
+      <Footer />
     </div>
   );
 }
